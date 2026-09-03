@@ -1,0 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE drivers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id  UUID NOT NULL UNIQUE REFERENCES users(id),
+    license_number VARCHAR(50) NOT NULL UNIQUE,
+    phone VARCHAR(30) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'OFFLINE' CHECK (status IN ('OFFLINE', 'BUSY', 'AVAILABLE', 'SUSPENDED')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now() 
+);
