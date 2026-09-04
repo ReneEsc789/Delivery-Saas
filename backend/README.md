@@ -51,8 +51,22 @@ This project uses `application.yml` for configuration, **which is not committed 
    (On Windows PowerShell: `Copy-Item src\main\resources\application.yml.example src\main\resources\application.yml`)
 2. Open `src/main/resources/application.yml` and replace `TU_CONTRASEÑA_AQUI` with your own local PostgreSQL password.
 3. If your PostgreSQL server uses a different port or database name, update the `spring.datasource.url` line accordingly.
+4. In the `app:` block, replace `app.jwt.secret` with any string of **at least 32 characters**. It's the HS256 signing key for the auth JWT — any locally-generated value works for development; production uses a real secret. The other keys (`app.jwt.expiration`, `app.auth.*`, `app.cors.allowed-origins`) can stay as-is for local work.
 
 **Never commit your real `application.yml`.** It's already listed in `.gitignore`.
+
+### `application.yml` keys
+
+| Key | Purpose |
+|---|---|
+| `spring.datasource.*` | PostgreSQL connection (URL, username, password) |
+| `spring.jpa.hibernate.ddl-auto` | Kept at `validate` — Flyway owns the schema, Hibernate only checks the entities match it |
+| `spring.flyway.*` | Migration settings (location, baseline) |
+| `app.jwt.secret` | HS256 key used to sign/verify the auth JWT (min 32 chars) |
+| `app.jwt.expiration` | Token lifetime, ISO-8601 duration (`PT24H` = 24 h) |
+| `app.auth.cookie-name` | Name of the HttpOnly cookie that carries the JWT |
+| `app.auth.cookie-secure` | `false` for local HTTP, `true` in production (HTTPS only) |
+| `app.cors.allowed-origins` | Front-end origin(s) allowed to call the API with credentials |
 
 ## Running the Backend Locally
 
@@ -73,8 +87,13 @@ http://localhost:8080
 ## Database Migrations (Flyway)
 
 - Migration files live in `src/main/resources/db/migration/`.
-- Naming convention: `V<number>__<description>.sql` (e.g. `V1__create_organizations.sql`, `V2__create_users.sql`).
-- Migrations run automatically every time the app starts — never edit a migration that has already been applied and committed. If you need to change something, create a new migration instead.
+- **Naming convention:** `V<number>__<description>.sql`
+  - Capital `V`, then the version number, then **two** underscores (`__`), then a short snake_case description, then `.sql`.
+  - Example: `V15__add_delivery_index.sql`.
+  - A single underscore, a lowercase `v`, or a wrong extension makes Flyway ignore or reject the file.
+- **Numbering is sequential.** The current highest migration is `V14`, so the next one is `V15`, then `V16`, and so on. Don't reuse or skip numbers.
+- Migrations run automatically every time the app starts — **never edit a migration that has already been applied and committed.** If you need to change the schema, create a new migration with the next number.
+- After changing the schema, update the matching JPA entities in `<feature>/domain/` so Hibernate's `validate` still passes on startup.
 - Do not set `spring.jpa.hibernate.ddl-auto` to `update` or `create` — Flyway is the single source of truth for the schema. It's kept at `validate` in `application.yml`.
 
 ## Troubleshooting
