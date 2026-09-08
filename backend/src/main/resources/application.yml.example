@@ -23,3 +23,13 @@ spring:
 
 server:
   port: 8080
+
+app:
+  jwt:
+    secret: CAMBIAR_POR_UNA_CLAVE_DE_MINIMO_32_CARACTERES
+    expiration: PT24H
+  auth:
+    cookie-name: auth_token
+    cookie-secure: false
+  cors:
+    allowed-origins: http://localhost:5173
