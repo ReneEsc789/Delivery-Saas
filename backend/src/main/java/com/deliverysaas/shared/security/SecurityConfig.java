@@ -20,8 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import com.deliverysaas.shared.error.ApiError;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
@@ -29,14 +27,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     private final JwtCookieAuthFilter jwtCookieAuthFilter;
-    private final ObjectMapper objectMapper;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
-    public SecurityConfig(JwtCookieAuthFilter jwtCookieAuthFilter, ObjectMapper objectMapper) {
+    public SecurityConfig(JwtCookieAuthFilter jwtCookieAuthFilter) {
         this.jwtCookieAuthFilter = jwtCookieAuthFilter;
-        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -84,9 +80,12 @@ public class SecurityConfig {
 
     private void writeError(HttpServletResponse response, HttpStatus status, String message, String path)
             throws IOException {
-        ApiError body = new ApiError(Instant.now(), status.value(), status.name(), message, path);
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(objectMapper.writeValueAsString(body));
+        response.setCharacterEncoding("UTF-8");
+        String json = """
+                {"timestamp": "%s", "status": %d, "error": "%s", "message": "%s", "path": "%s"}"""
+                .formatted(Instant.now(), status.value(), status.name(), message, path);
+        response.getWriter().write(json);
     }
 }
