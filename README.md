@@ -306,3 +306,62 @@ Development is organized in phases:
 10. Frontend
 11. Documentation
 12. Deployment
+
+## Local development with Docker
+
+Docker Desktop is the only prerequisite for running the backend and PostgreSQL locally.
+
+### First-time setup
+
+From the repository root, create your local configuration file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Open `.env` and set a local database password and a long JWT secret. Do not commit this file: it contains local credentials and is already ignored by Git.
+
+Start the API and database:
+
+```powershell
+docker compose up --build -d
+docker compose logs -f backend
+```
+
+The API is available at `http://localhost:8080`. Flyway automatically creates the schema and applies every pending database migration.
+
+### Daily use
+
+```powershell
+# Start existing containers
+docker compose up -d
+
+# Stop containers while preserving local database data
+docker compose down
+
+# Check service status
+docker compose ps
+```
+
+After editing backend code, a Flyway migration, or `pom.xml`, rebuild the backend:
+
+```powershell
+docker compose up --build -d
+```
+
+After pulling teammates' changes from GitHub, use the same command so your local image is rebuilt and any new migrations are applied:
+
+```powershell
+git pull
+docker compose up --build -d
+docker compose logs -f backend
+```
+
+### Resetting the local database
+
+This command permanently deletes only your local Docker database volume. Use it only when you deliberately want a clean database:
+
+```powershell
+docker compose down -v
+docker compose up --build -d
+```

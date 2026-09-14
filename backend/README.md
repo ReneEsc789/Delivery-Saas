@@ -70,6 +70,19 @@ This project uses `application.yml` for configuration, **which is not committed 
 
 ## Running the Backend Locally
 
+### Docker (recommended)
+
+From the repository root, create your local environment file and start the API plus PostgreSQL:
+
+```
+Copy-Item .env.example .env
+docker compose up --build
+```
+
+The API is available at `http://localhost:8080`. Flyway runs all pending migrations automatically. Stop the services with `docker compose down`; use `docker compose down -v` only when you intentionally want to delete the local database volume.
+
+### Without Docker
+
 From the `backend/` directory:
 
 ```
