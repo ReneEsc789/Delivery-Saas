@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.deliverysaas.audit.AuditService;
 import com.deliverysaas.organizations.OrganizationRepository;
 import com.deliverysaas.organizations.domain.Organization;
 import com.deliverysaas.shared.error.ConflictException;
@@ -17,10 +18,13 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final OrganizationRepository organizationRepository;
+    private final AuditService auditService;
 
-    public VehicleService(VehicleRepository vehicleRepository, OrganizationRepository organizationRepository) {
+    public VehicleService(VehicleRepository vehicleRepository, OrganizationRepository organizationRepository,
+            AuditService auditService) {
         this.vehicleRepository = vehicleRepository;
         this.organizationRepository = organizationRepository;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -31,7 +35,9 @@ public class VehicleService {
             .orElseThrow(() -> new NotFoundException("Organization not found"));
         Vehicle vehicle = new Vehicle(organization, plate, request.type(), request.capacity());
         vehicle.setModel(blankToNull(request.model()));
-        return VehicleResponse.from(vehicleRepository.save(vehicle));
+        vehicleRepository.save(vehicle);
+        auditService.record("CREATE", "VEHICLE", vehicle.getId(), "Vehicle created");
+        return VehicleResponse.from(vehicle);
     }
 
     @Transactional(readOnly = true)
@@ -56,12 +62,15 @@ public class VehicleService {
         vehicle.setType(request.type());
         vehicle.setCapacity(request.capacity());
         vehicle.setStatus(request.status());
+        auditService.record("UPDATE", "VEHICLE", vehicle.getId(), "Vehicle updated");
         return VehicleResponse.from(vehicle);
     }
 
     @Transactional
     public void delete(UUID id, UUID organizationId) {
-        findVehicle(id, organizationId).setStatus(VehicleStatus.INACTIVE);
+        Vehicle vehicle = findVehicle(id, organizationId);
+        vehicle.setStatus(VehicleStatus.INACTIVE);
+        auditService.record("DEACTIVATE", "VEHICLE", vehicle.getId(), "Vehicle deactivated");
     }
 
     private Vehicle findVehicle(UUID id, UUID organizationId) {

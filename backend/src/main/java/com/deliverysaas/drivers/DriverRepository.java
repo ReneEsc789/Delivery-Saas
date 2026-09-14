@@ -10,6 +10,7 @@ public interface DriverRepository extends JpaRepository<Driver, UUID> {
     List<Driver> findAllByUserOrganizationId(UUID organizationId);
 
     Optional<Driver> findByIdAndUserOrganizationId(UUID id, UUID organizationId);
+    Optional<Driver> findByUserIdAndUserOrganizationId(UUID userId, UUID organizationId);
 
     boolean existsByUserId(UUID userId);
 

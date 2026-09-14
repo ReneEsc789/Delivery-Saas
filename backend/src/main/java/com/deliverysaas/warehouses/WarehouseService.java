@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.deliverysaas.audit.AuditService;
 import com.deliverysaas.organizations.OrganizationRepository;
 import com.deliverysaas.organizations.domain.Organization;
 import com.deliverysaas.shared.error.NotFoundException;
@@ -15,10 +16,13 @@ public class WarehouseService {
 
     private final WarehouseRepository warehouseRepository;
     private final OrganizationRepository organizationRepository;
+    private final AuditService auditService;
 
-    public WarehouseService(WarehouseRepository warehouseRepository, OrganizationRepository organizationRepository) {
+    public WarehouseService(WarehouseRepository warehouseRepository, OrganizationRepository organizationRepository,
+            AuditService auditService) {
         this.warehouseRepository = warehouseRepository;
         this.organizationRepository = organizationRepository;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -27,7 +31,9 @@ public class WarehouseService {
             .orElseThrow(() -> new NotFoundException("Organization not found"));
         Warehouse warehouse = new Warehouse(organization, request.name().trim(), request.latitude(), request.longitude());
         applyAddress(warehouse, request.address(), request.city(), request.state(), request.postalCode());
-        return WarehouseResponse.from(warehouseRepository.save(warehouse));
+        warehouseRepository.save(warehouse);
+        auditService.record("CREATE", "WAREHOUSE", warehouse.getId(), "Warehouse created");
+        return WarehouseResponse.from(warehouse);
     }
 
     @Transactional(readOnly = true)
@@ -50,12 +56,15 @@ public class WarehouseService {
         warehouse.setLongitude(request.longitude());
         warehouse.setStatus(request.status());
         applyAddress(warehouse, request.address(), request.city(), request.state(), request.postalCode());
+        auditService.record("UPDATE", "WAREHOUSE", warehouse.getId(), "Warehouse updated");
         return WarehouseResponse.from(warehouse);
     }
 
     @Transactional
     public void delete(UUID id, UUID organizationId) {
-        findWarehouse(id, organizationId).setStatus(WarehouseStatus.INACTIVE);
+        Warehouse warehouse = findWarehouse(id, organizationId);
+        warehouse.setStatus(WarehouseStatus.INACTIVE);
+        auditService.record("DEACTIVATE", "WAREHOUSE", warehouse.getId(), "Warehouse deactivated");
     }
 
     private Warehouse findWarehouse(UUID id, UUID organizationId) {

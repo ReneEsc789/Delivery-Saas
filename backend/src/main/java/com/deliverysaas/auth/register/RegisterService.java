@@ -10,17 +10,20 @@ import com.deliverysaas.shared.error.ConflictException;
 import com.deliverysaas.users.UserRepository;
 import com.deliverysaas.users.domain.User;
 import com.deliverysaas.users.domain.UserRole;
+import com.deliverysaas.audit.AuditService;
 
 @Service 
 public class RegisterService {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService auditService;
 
-    public RegisterService(UserRepository userRepository, OrganizationRepository organizationRepository, PasswordEncoder passwordEncoder) {
+    public RegisterService(UserRepository userRepository, OrganizationRepository organizationRepository, PasswordEncoder passwordEncoder, AuditService auditService) {
         this.userRepository = userRepository;
         this.organizationRepository = organizationRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditService = auditService;
     }
 
     @Transactional 
@@ -43,6 +46,7 @@ public class RegisterService {
             UserRole.ADMIN
         );
         userRepository.save(user);
+        auditService.record(organization, user, "CREATE", "ORGANIZATION", organization.getId(), "Organization registered");
 
         return user;
     }

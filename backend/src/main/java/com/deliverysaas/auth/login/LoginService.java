@@ -7,6 +7,7 @@ import com.deliverysaas.shared.error.UnauthorizedException;
 import com.deliverysaas.users.UserRepository;
 import com.deliverysaas.users.domain.User;
 import com.deliverysaas.users.domain.UserStatus;
+import com.deliverysaas.organizations.domain.OrganizationStatus;
 
 @Service 
 public class LoginService {
@@ -28,6 +29,9 @@ public class LoginService {
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("Account is not active");
+        }
+        if (user.getOrganization().getStatus() != OrganizationStatus.ACTIVE) {
+            throw new ForbiddenException("Organization is not active");
         }
 
         return user;
