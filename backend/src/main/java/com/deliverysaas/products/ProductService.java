@@ -60,7 +60,7 @@ public class ProductService {
 
     @Transactional
     public void delete(UUID id, UUID organizationId) {
-        productRepository.delete(findProduct(id, organizationId));
+        findProduct(id, organizationId).setActive(false);
     }
 
     private Product findProduct(UUID id, UUID organizationId) {

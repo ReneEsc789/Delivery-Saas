@@ -33,7 +33,7 @@ public class Vehicle {
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, length = 20)
     private String plate;
 
     @Column(length = 100)

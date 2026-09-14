@@ -11,7 +11,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
 
     Optional<Vehicle> findByIdAndOrganizationId(UUID id, UUID organizationId);
 
-    boolean existsByPlate(String plate);
+    boolean existsByPlateAndOrganizationId(String plate, UUID organizationId);
 
-    boolean existsByPlateAndIdNot(String plate, UUID id);
+    boolean existsByPlateAndOrganizationIdAndIdNot(String plate, UUID organizationId, UUID id);
 }

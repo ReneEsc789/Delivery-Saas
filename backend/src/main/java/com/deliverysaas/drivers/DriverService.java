@@ -34,8 +34,8 @@ public class DriverService {
             throw new ConflictException("This user already has a driver profile");
         }
         String licenseNumber = normalizedLicense(request.licenseNumber());
-        ensureLicenseAvailable(licenseNumber, null);
-        Driver driver = new Driver(user, licenseNumber, request.phone().trim());
+        ensureLicenseAvailable(licenseNumber, organizationId, null);
+        Driver driver = new Driver(user, user.getOrganization(), licenseNumber, request.phone().trim());
         return DriverResponse.from(driverRepository.save(driver));
     }
 
@@ -55,7 +55,7 @@ public class DriverService {
     public DriverResponse update(UUID id, UUID organizationId, UpdateDriverRequest request) {
         Driver driver = findDriver(id, organizationId);
         String licenseNumber = normalizedLicense(request.licenseNumber());
-        ensureLicenseAvailable(licenseNumber, id);
+        ensureLicenseAvailable(licenseNumber, organizationId, id);
         driver.setLicenseNumber(licenseNumber);
         driver.setPhone(request.phone().trim());
         driver.setStatus(request.status());
@@ -84,10 +84,10 @@ public class DriverService {
         }
     }
 
-    private void ensureLicenseAvailable(String licenseNumber, UUID driverId) {
+    private void ensureLicenseAvailable(String licenseNumber, UUID organizationId, UUID driverId) {
         boolean exists = driverId == null
-            ? driverRepository.existsByLicenseNumber(licenseNumber)
-            : driverRepository.existsByLicenseNumberAndIdNot(licenseNumber, driverId);
+            ? driverRepository.existsByLicenseNumberAndOrganizationId(licenseNumber, organizationId)
+            : driverRepository.existsByLicenseNumberAndOrganizationIdAndIdNot(licenseNumber, organizationId, driverId);
         if (exists) {
             throw new ConflictException("A driver with this license number already exists");
         }

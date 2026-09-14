@@ -26,7 +26,7 @@ public class VehicleService {
     @Transactional
     public VehicleResponse create(UUID organizationId, CreateVehicleRequest request) {
         String plate = normalizedPlate(request.plate());
-        ensurePlateAvailable(plate, null);
+        ensurePlateAvailable(plate, organizationId, null);
         Organization organization = organizationRepository.findById(organizationId)
             .orElseThrow(() -> new NotFoundException("Organization not found"));
         Vehicle vehicle = new Vehicle(organization, plate, request.type(), request.capacity());
@@ -50,7 +50,7 @@ public class VehicleService {
     public VehicleResponse update(UUID id, UUID organizationId, UpdateVehicleRequest request) {
         Vehicle vehicle = findVehicle(id, organizationId);
         String plate = normalizedPlate(request.plate());
-        ensurePlateAvailable(plate, id);
+        ensurePlateAvailable(plate, organizationId, id);
         vehicle.setPlate(plate);
         vehicle.setModel(blankToNull(request.model()));
         vehicle.setType(request.type());
@@ -69,10 +69,10 @@ public class VehicleService {
             .orElseThrow(() -> new NotFoundException("Vehicle not found"));
     }
 
-    private void ensurePlateAvailable(String plate, UUID vehicleId) {
+    private void ensurePlateAvailable(String plate, UUID organizationId, UUID vehicleId) {
         boolean exists = vehicleId == null
-            ? vehicleRepository.existsByPlate(plate)
-            : vehicleRepository.existsByPlateAndIdNot(plate, vehicleId);
+            ? vehicleRepository.existsByPlateAndOrganizationId(plate, organizationId)
+            : vehicleRepository.existsByPlateAndOrganizationIdAndIdNot(plate, organizationId, vehicleId);
         if (exists) {
             throw new ConflictException("A vehicle with this plate already exists");
         }

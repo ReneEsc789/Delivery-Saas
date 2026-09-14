@@ -13,7 +13,7 @@ public interface DriverRepository extends JpaRepository<Driver, UUID> {
 
     boolean existsByUserId(UUID userId);
 
-    boolean existsByLicenseNumber(String licenseNumber);
+    boolean existsByLicenseNumberAndOrganizationId(String licenseNumber, UUID organizationId);
 
-    boolean existsByLicenseNumberAndIdNot(String licenseNumber, UUID id);
+    boolean existsByLicenseNumberAndOrganizationIdAndIdNot(String licenseNumber, UUID organizationId, UUID id);
 }
