@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.deliverysaas.organizations.domain.Organization;
 import com.deliverysaas.users.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -28,7 +30,11 @@ public class Driver {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
+
+    @Column(nullable = false, length = 50)
     private String licenseNumber;
 
     @Column(nullable = false, length = 30)
@@ -48,8 +54,9 @@ public class Driver {
 
     public Driver() {}
 
-    public Driver(User user, String licenseNumber, String phone) {
+    public Driver(User user, Organization organization, String licenseNumber, String phone) {
         this.user = user;
+        this.organization = organization;
         this.licenseNumber = licenseNumber;
         this.phone = phone;
     }
@@ -64,6 +71,14 @@ public class Driver {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 
     public String getLicenseNumber() {
