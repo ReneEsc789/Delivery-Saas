@@ -1,0 +1,4 @@
+package com.deliverysaas.orders;
+import java.math.BigDecimal;import java.time.Instant;import java.util.*;import com.deliverysaas.orders.domain.*;
+public record OrderResponse(UUID id,UUID customerId,UUID warehouseId,OrderStatus status,BigDecimal totalAmount,String deliveryAddress,String deliveryCity,String deliveryState,String deliveryPostalCode,String notes,List<OrderItemResponse> items,Instant createdAt,Instant updatedAt){
+ public static OrderResponse from(Order o,List<OrderItem> items){return new OrderResponse(o.getId(),o.getCustomer().getId(),o.getWarehouse().getId(),o.getStatus(),o.getTotalAmount(),o.getDeliveryAddress(),o.getDeliveryCity(),o.getDeliveryState(),o.getDeliveryPostalCode(),o.getNotes(),items.stream().map(OrderItemResponse::from).toList(),o.getCreatedAt(),o.getUpdatedAt());}}

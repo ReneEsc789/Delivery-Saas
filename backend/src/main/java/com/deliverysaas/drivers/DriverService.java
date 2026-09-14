@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.deliverysaas.audit.AuditService;
 import com.deliverysaas.drivers.domain.Driver;
 import com.deliverysaas.drivers.domain.DriverStatus;
 import com.deliverysaas.shared.error.ConflictException;
@@ -19,10 +20,12 @@ public class DriverService {
 
     private final DriverRepository driverRepository;
     private final UserRepository userRepository;
+    private final AuditService auditService;
 
-    public DriverService(DriverRepository driverRepository, UserRepository userRepository) {
+    public DriverService(DriverRepository driverRepository, UserRepository userRepository, AuditService auditService) {
         this.driverRepository = driverRepository;
         this.userRepository = userRepository;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -36,7 +39,9 @@ public class DriverService {
         String licenseNumber = normalizedLicense(request.licenseNumber());
         ensureLicenseAvailable(licenseNumber, organizationId, null);
         Driver driver = new Driver(user, user.getOrganization(), licenseNumber, request.phone().trim());
-        return DriverResponse.from(driverRepository.save(driver));
+        driverRepository.save(driver);
+        auditService.record("CREATE", "DRIVER", driver.getId(), "Driver profile created");
+        return DriverResponse.from(driver);
     }
 
     @Transactional(readOnly = true)
@@ -59,12 +64,15 @@ public class DriverService {
         driver.setLicenseNumber(licenseNumber);
         driver.setPhone(request.phone().trim());
         driver.setStatus(request.status());
+        auditService.record("UPDATE", "DRIVER", driver.getId(), "Driver profile updated");
         return DriverResponse.from(driver);
     }
 
     @Transactional
     public void delete(UUID id, UUID organizationId) {
-        findDriver(id, organizationId).setStatus(DriverStatus.SUSPENDED);
+        Driver driver = findDriver(id, organizationId);
+        driver.setStatus(DriverStatus.SUSPENDED);
+        auditService.record("DEACTIVATE", "DRIVER", driver.getId(), "Driver suspended");
     }
 
     private Driver findDriver(UUID id, UUID organizationId) {

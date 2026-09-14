@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.deliverysaas.audit.AuditService;
 import com.deliverysaas.products.ProductRepository;
 import com.deliverysaas.products.domain.Product;
 import com.deliverysaas.shared.error.ConflictException;
@@ -18,12 +19,14 @@ public class WarehouseInventoryService {
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
     private final WarehouseInventoryRepository inventoryRepository;
+    private final AuditService auditService;
 
     public WarehouseInventoryService(WarehouseRepository warehouseRepository, ProductRepository productRepository,
-            WarehouseInventoryRepository inventoryRepository) {
+            WarehouseInventoryRepository inventoryRepository, AuditService auditService) {
         this.warehouseRepository = warehouseRepository;
         this.productRepository = productRepository;
         this.inventoryRepository = inventoryRepository;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -38,7 +41,9 @@ public class WarehouseInventoryService {
         }
         WarehouseInventory inventory = new WarehouseInventory(warehouse, product);
         inventory.setQuantity(request.quantity());
-        return WarehouseInventoryResponse.from(inventoryRepository.save(inventory));
+        inventoryRepository.save(inventory);
+        auditService.record("CREATE", "WAREHOUSE_INVENTORY", inventory.getId(), "Inventory item created");
+        return WarehouseInventoryResponse.from(inventory);
     }
 
     @Transactional(readOnly = true)
@@ -56,13 +61,16 @@ public class WarehouseInventoryService {
         ensureWarehouseActive(warehouse);
         WarehouseInventory inventory = findInventory(warehouseId, productId);
         inventory.setQuantity(request.quantity());
+        auditService.record("UPDATE", "WAREHOUSE_INVENTORY", inventory.getId(), "Inventory quantity updated");
         return WarehouseInventoryResponse.from(inventory);
     }
 
     @Transactional
     public void delete(UUID warehouseId, UUID productId, UUID organizationId) {
         findWarehouse(warehouseId, organizationId);
-        inventoryRepository.delete(findInventory(warehouseId, productId));
+        WarehouseInventory inventory = findInventory(warehouseId, productId);
+        inventoryRepository.delete(inventory);
+        auditService.record("DELETE", "WAREHOUSE_INVENTORY", inventory.getId(), "Inventory item deleted");
     }
 
     private Warehouse findWarehouse(UUID id, UUID organizationId) {
