@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.deliverysaas.audit.AuditService;
 import com.deliverysaas.organizations.OrganizationRepository;
 import com.deliverysaas.organizations.domain.Organization;
 import com.deliverysaas.products.domain.Product;
@@ -15,10 +16,13 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final OrganizationRepository organizationRepository;
+    private final AuditService auditService;
 
-    public ProductService(ProductRepository productRepository, OrganizationRepository organizationRepository) {
+    public ProductService(ProductRepository productRepository, OrganizationRepository organizationRepository,
+            AuditService auditService) {
         this.productRepository = productRepository;
         this.organizationRepository = organizationRepository;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -29,7 +33,9 @@ public class ProductService {
             .orElseThrow(() -> new NotFoundException("Organization not found"));
         Product product = new Product(organization, request.name().trim(), sku,
             blankToNull(request.description()), request.price(), request.weight());
-        return ProductResponse.from(productRepository.save(product));
+        productRepository.save(product);
+        auditService.record("CREATE", "PRODUCT", product.getId(), "Product created");
+        return ProductResponse.from(product);
     }
 
     @Transactional(readOnly = true)
@@ -55,12 +61,15 @@ public class ProductService {
         product.setPrice(request.price());
         product.setWeight(request.weight());
         product.setActive(request.active());
+        auditService.record("UPDATE", "PRODUCT", product.getId(), "Product updated");
         return ProductResponse.from(product);
     }
 
     @Transactional
     public void delete(UUID id, UUID organizationId) {
-        findProduct(id, organizationId).setActive(false);
+        Product product = findProduct(id, organizationId);
+        product.setActive(false);
+        auditService.record("DEACTIVATE", "PRODUCT", product.getId(), "Product deactivated");
     }
 
     private Product findProduct(UUID id, UUID organizationId) {

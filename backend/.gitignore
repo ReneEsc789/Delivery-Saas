@@ -34,3 +34,4 @@ build/
 
 ### Local config (contains real DB password) ###
 src/main/resources/application.yml
+.vscode/
