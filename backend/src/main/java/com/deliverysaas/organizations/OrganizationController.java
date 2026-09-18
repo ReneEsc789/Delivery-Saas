@@ -12,13 +12,26 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/v1/organization")
 public class OrganizationController {
     private final OrganizationService service;
-    public OrganizationController(OrganizationService service) { this.service = service; }
-
-    @GetMapping public OrganizationResponse find(@AuthenticationPrincipal AuthPrincipal p) { return service.find(p.organizationId()); }
-    @PutMapping public OrganizationResponse update(@AuthenticationPrincipal AuthPrincipal p,
-            @Valid @RequestBody UpdateOrganizationRequest r) { requireAdmin(p); return service.update(p.organizationId(), r); }
-    @DeleteMapping public ResponseEntity<Void> delete(@AuthenticationPrincipal AuthPrincipal p) {
-        requireAdmin(p); service.delete(p.organizationId()); return ResponseEntity.noContent().build();
+    public OrganizationController(OrganizationService service) { 
+        this.service = service; 
     }
-    private void requireAdmin(AuthPrincipal p) { if (p.role() != UserRole.ADMIN) throw new ForbiddenException("Admin role required"); }
+
+    @GetMapping 
+    public OrganizationResponse find(@AuthenticationPrincipal AuthPrincipal p) { 
+        return service.find(p.organizationId()); 
+    }
+    @PutMapping 
+    public OrganizationResponse update(@AuthenticationPrincipal AuthPrincipal p, @Valid @RequestBody UpdateOrganizationRequest r) { 
+            requireAdmin(p); 
+            return service.update(p.organizationId(), r); 
+        }
+    @DeleteMapping 
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal AuthPrincipal p) {
+        requireAdmin(p); 
+        service.delete(p.organizationId()); 
+        return ResponseEntity.noContent().build();
+    }
+    private void requireAdmin(AuthPrincipal p) { 
+        if (p.role() != UserRole.ADMIN) throw new ForbiddenException("Admin role required"); 
+    }
 }

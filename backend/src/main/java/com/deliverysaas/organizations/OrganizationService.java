@@ -13,10 +13,15 @@ public class OrganizationService {
     private final OrganizationRepository repository;
     private final AuditService audit;
 
-    public OrganizationService(OrganizationRepository repository, AuditService audit) { this.repository = repository; this.audit = audit; }
+    public OrganizationService(OrganizationRepository repository, AuditService audit) { 
+        this.repository = repository; 
+        this.audit = audit; 
+    }
 
     @Transactional(readOnly = true)
-    public OrganizationResponse find(UUID id) { return OrganizationResponse.from(get(id)); }
+    public OrganizationResponse find(UUID id) { 
+        return OrganizationResponse.from(get(id)); 
+    }
 
     @Transactional
     public OrganizationResponse update(UUID id, UpdateOrganizationRequest request) {
@@ -27,7 +32,11 @@ public class OrganizationService {
     }
 
     @Transactional
-    public void delete(UUID id) { Organization o=get(id);o.setStatus(OrganizationStatus.INACTIVE);audit.record("DEACTIVATE", "ORGANIZATION", o.getId(), "Organization deactivated"); }
+    public void delete(UUID id) { 
+        Organization o=get(id);
+        o.setStatus(OrganizationStatus.INACTIVE);
+        audit.record("DEACTIVATE", "ORGANIZATION", o.getId(), "Organization deactivated"); 
+    }
 
     private Organization get(UUID id) {
         return repository.findById(id).orElseThrow(() -> new NotFoundException("Organization not found"));
