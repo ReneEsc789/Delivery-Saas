@@ -4,13 +4,25 @@ import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.deliverysaas.shared.security.AuthPrincipal;
+import com.deliverysaas.deliveries.assignment.AssignDeliveryService;
+import com.deliverysaas.deliveries.prioritization.DeliveryPriorityService;
+import com.deliverysaas.deliveries.prioritization.DispatchResponse;
+import com.deliverysaas.deliveries.prioritization.PendingDispatchService;
+import com.deliverysaas.deliveries.prioritization.PrioritizedDeliveryResponse;
 import jakarta.validation.Valid;
-@RestController 
-@RequestMapping("/api/v1/deliveries") 
+
+@RestController
+@RequestMapping("/api/v1/deliveries")
 public class DeliveryController{
     private final DeliveryService service;
-    public DeliveryController(DeliveryService s){
+    private final AssignDeliveryService autoAssign;
+    private final DeliveryPriorityService priority;
+    private final PendingDispatchService dispatch;
+    public DeliveryController(DeliveryService s, AssignDeliveryService a, DeliveryPriorityService pr, PendingDispatchService d){
         service=s;
+        autoAssign = a;
+        priority = pr;
+        dispatch = d;
     }
     @PostMapping 
     public ResponseEntity<DeliveryResponse> create(@AuthenticationPrincipal AuthPrincipal p,@Valid @RequestBody CreateDeliveryRequest r){
@@ -19,6 +31,14 @@ public class DeliveryController{
     @GetMapping 
     public List<DeliveryResponse> all(@AuthenticationPrincipal AuthPrincipal p){
         return service.all(p);
+    }
+    @GetMapping("/queue")
+    public List<PrioritizedDeliveryResponse> queue(@AuthenticationPrincipal AuthPrincipal p){
+        return priority.queue(p);
+    }
+    @PostMapping("/auto-assign-pending")
+    public DispatchResponse autoAssignPending(@AuthenticationPrincipal AuthPrincipal p){
+        return dispatch.autoAssignPending(p);
     }
     @GetMapping("/{id}")
     public DeliveryResponse one(@AuthenticationPrincipal AuthPrincipal p, @PathVariable UUID id){
@@ -32,6 +52,12 @@ public class DeliveryController{
     public DeliveryResponse assign(@AuthenticationPrincipal AuthPrincipal p,@PathVariable UUID id,@Valid @RequestBody AssignDeliveryRequest r){
         return service.assign(p,id,r);
     }
+
+    @PostMapping("/{id}/auto-assignment")
+    public DeliveryResponse autoAssign(@AuthenticationPrincipal AuthPrincipal p, @PathVariable UUID id) {
+        return autoAssign.autoAssign(p, id);
+    }
+    
     @PostMapping("/{id}/status")
     public DeliveryResponse status(@AuthenticationPrincipal AuthPrincipal p,@PathVariable UUID id,@Valid @RequestBody DeliveryStatusRequest r){
         return service.status(p,id,r);

@@ -59,6 +59,12 @@ public class Order {
     @Column(name = "delivery_postal_code", length = 20)
     private String deliveryPostalCode;
 
+    @Column(name = "delivery_latitude", precision = 9, scale = 6)
+    private BigDecimal deliveryLatitude;
+
+    @Column(name = "delivery_longitude", precision = 9, scale = 6)
+    private BigDecimal deliveryLongitude;
+
     @Column(columnDefinition = "text")
     private String notes;
 
@@ -153,6 +159,22 @@ public class Order {
 
     public void setDeliveryPostalCode(String deliveryPostalCode) {
         this.deliveryPostalCode = deliveryPostalCode;
+    }
+
+    public BigDecimal getDeliveryLatitude() {
+        return deliveryLatitude;
+    }
+
+    public void setDeliveryLatitude(BigDecimal deliveryLatitude) {
+        this.deliveryLatitude = deliveryLatitude;
+    }
+
+    public BigDecimal getDeliveryLongitude() {
+        return deliveryLongitude;
+    }
+
+    public void setDeliveryLongitude(BigDecimal deliveryLongitude) {
+        this.deliveryLongitude = deliveryLongitude;
     }
 
     public String getNotes() {
