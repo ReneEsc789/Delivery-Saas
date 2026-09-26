@@ -19,6 +19,7 @@ import com.deliverysaas.drivers.domain.DriverStatus;
 import com.deliverysaas.orders.domain.Order;
 import com.deliverysaas.orders.domain.OrderItem;
 import com.deliverysaas.orders.domain.OrderStatus;
+import com.deliverysaas.orders.selection.WarehouseSelectionService;
 import com.deliverysaas.organizations.OrganizationRepository;
 import com.deliverysaas.products.ProductRepository;
 import com.deliverysaas.products.domain.Product;
@@ -50,11 +51,13 @@ public class OrderService {
     private final DeliveryStatusHistoryRepository deliveryHistory;
     private final UserRepository users;
     private final AuditService audit;
+    private final WarehouseSelectionService warehouseSelection;
 
     public OrderService(OrderRepository orders, OrderItemRepository items, CustomerRepository customers,
             WarehouseRepository warehouses, ProductRepository products, WarehouseInventoryRepository inventory,
             OrganizationRepository organizations, DeliveryRepository deliveries,
-            DeliveryStatusHistoryRepository deliveryHistory, UserRepository users, AuditService audit) {
+            DeliveryStatusHistoryRepository deliveryHistory, UserRepository users, AuditService audit,
+            WarehouseSelectionService warehouseSelection) {
         this.orders = orders;
         this.items = items;
         this.customers = customers;
@@ -66,6 +69,7 @@ public class OrderService {
         this.deliveryHistory = deliveryHistory;
         this.users = users;
         this.audit = audit;
+        this.warehouseSelection = warehouseSelection;
     }
 
     @Transactional
@@ -75,10 +79,14 @@ public class OrderService {
         if (c.getUser().getStatus() != UserStatus.ACTIVE) {
             throw new ConflictException("Customer is inactive");
         }
-        Warehouse w = warehouse(r.warehouseId(), a.organizationId());
+        Warehouse w = r.warehouseId() != null
+            ? warehouse(r.warehouseId(), a.organizationId())
+            : warehouseSelection.select(a.organizationId(), r.items(), r.deliveryLatitude(), r.deliveryLongitude());
         active(w);
         Order o = new Order(organizations.getReferenceById(a.organizationId()), c, w, r.deliveryAddress().trim());
         apply(o, r.deliveryAddress(), r.deliveryCity(), r.deliveryState(), r.deliveryPostalCode(), r.notes());
+        o.setDeliveryLatitude(r.deliveryLatitude());
+        o.setDeliveryLongitude(r.deliveryLongitude());
         orders.save(o);
         replaceItems(o, w, r.items());
         audit.record("CREATE", "ORDER", o.getId(), "Order created");
@@ -114,6 +122,8 @@ public class OrderService {
         active(w);
         o.setWarehouse(w);
         apply(o, r.deliveryAddress(), r.deliveryCity(), r.deliveryState(), r.deliveryPostalCode(), r.notes());
+        o.setDeliveryLatitude(r.deliveryLatitude());
+        o.setDeliveryLongitude(r.deliveryLongitude());
         replaceItems(o, w, r.items());
         audit.record("UPDATE", "ORDER", o.getId(), "Order updated");
         return response(o);
